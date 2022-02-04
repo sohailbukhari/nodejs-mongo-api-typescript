@@ -29,21 +29,20 @@ app.use((req, res: any) => {
 app.use((err: any, req: any, res: any, next: any) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  // res.locals.error = req.app.get("env") === "development" ? err : {};
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   if (err.error || err.hasOwnProperty('errors') || err.name === 'MongoError') {
     err.status = 422;
   }
 
-  const errResponse = {
+  const body = {
     message: err.message,
-    statusCode: err.status || 400,
+    statusCode: err.status || 500,
     data: err.hasOwnProperty('errors') ? err.errors : err.name === 'MongoError' ? err : err.error ? err.error.details : err.details,
   };
 
-  logger.error(errResponse.message);
-  logger.error({ key: 'ASD', data: 'wroking' });
-  res.reply(errResponse);
+  logger.error(`${body.statusCode} - ${body.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  res.reply(body);
 
   next();
 });

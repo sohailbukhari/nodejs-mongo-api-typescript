@@ -1,7 +1,7 @@
 {
-  "name": "sohailbukhari-nodejs",
+  "name": "sienx-nodejs-mongo-api-typescript",
   "version": "1.0.0",
-  "description": "Authentication & Authorization Service",
+  "description": "Monolith Backend Service",
   "main": "server.js",
   "scripts": {
     "start": "node ./dist/server.js",
@@ -15,7 +15,8 @@
     "sohail bukhari",
     "nodejs",
     "typescript",
-    "rest api"
+    "rest api",
+    "sienx"
   ],
   "author": "Sohail Bukhari",
   "license": "ISC",
@@ -35,7 +36,8 @@
     "mongoose-paginate-v2": "^1.4.2",
     "morgan": "^1.10.0",
     "redis": "^3.1.2",
-    "sha256": "^0.2.0"
+    "sha256": "^0.2.0",
+    "winston": "^3.5.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",

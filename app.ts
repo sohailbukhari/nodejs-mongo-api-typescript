@@ -1,9 +1,11 @@
 import express from 'express';
-import logger from 'morgan';
+import morgan from 'morgan';
 import cors from 'cors';
 
 import response from './src/middlewares/response';
 import routes from './src/config/routes';
+import keys from './src/config/keys';
+import logger from './src/utils/logger';
 
 require('./src/config/db');
 require('./src/config/redis');
@@ -14,7 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(response);
 app.use(cors());
-app.use(logger('dev'));
+app.use(morgan(keys.dev ? 'dev' : 'combined'));
 
 routes(app);
 
@@ -33,11 +35,16 @@ app.use((err: any, req: any, res: any, next: any) => {
     err.status = 422;
   }
 
-  res.reply({
+  const errResponse = {
     message: err.message,
     statusCode: err.status || 400,
     data: err.hasOwnProperty('errors') ? err.errors : err.name === 'MongoError' ? err : err.error ? err.error.details : err.details,
-  });
+  };
+
+  logger.error(errResponse.message);
+  logger.error({ key: 'ASD', data: 'wroking' });
+  res.reply(errResponse);
+
   next();
 });
 

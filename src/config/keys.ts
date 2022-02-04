@@ -5,6 +5,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 export default {
-  secret: process.env.SECRET || 'hyper@loop(^^4&23encrtyped%#!@secret',
-  mongodb: process.env.DB_CONNECTION_STRING || 'mongodb://localhost:27017/sys-identity',
+  dev: process.env.NODE_ENV !== 'production',
+  secret: process.env.SECRET || 'sohxil@loop(^^4&d%#!@secret',
+  mongodb: process.env.DATABASE || 'mongodb://localhost:27017/cheggl',
 };

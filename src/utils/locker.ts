@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 
 import keys from '../config/keys';
 
-const issuer = 'sohailbukhari.com';
+const issuer = 'cheggl.com';
 
 export const unlock = async (request: Request) => {
   let authHeader = request.headers['authorization'] || '';
@@ -18,11 +18,11 @@ export const unlock = async (request: Request) => {
 
 export const lock = (obj: any, time: number = 25, expiry: boolean = true) => {
   // define the expiry timeframe
-  const payload: any = { algorithm: 'HS256', issuer };
+  const args: any = { algorithm: 'HS256', issuer };
   if (expiry) {
-    payload['expiresIn'] = 60 * time;
+    args['expiresIn'] = 60 * time;
   }
-  return jwt.sign(obj, keys.secret, payload);
+  return jwt.sign(obj, keys.secret, args);
 };
 
 export const verify = async (token: string) => jwt.verify(token, keys.secret, { algorithms: ['HS256'], issuer });

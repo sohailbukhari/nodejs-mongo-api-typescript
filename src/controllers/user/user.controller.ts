@@ -1,109 +1,121 @@
 import { User } from '../../models';
 import * as RedisController from '../redis/redis.controller';
 
-import { lock, verify } from '../../utils/locker';
-import { UserIF } from 'src/types/UserIF';
+import { filterQuery } from '../../utils/common';
+import { lock } from '../../utils/locker';
 
-export const setRedisUser = (user: UserIF) => RedisController.setKey('User', user._id, JSON.stringify(user));
-export const getRedisUser = (_id: string) => RedisController.getKey('User', _id);
+import { Role, UserIF, UserPayloadIF } from '../../types/UserIF';
+import { ClientIF } from '../../types/AuthIF';
+import { randomUUID } from 'crypto';
 
-export const setRedisPasswordResetToken = (_id: string, token: string) => RedisController.setKey('Password-Reset-Token', _id, token, 60 * 60); // expire in 1 hr
-export const getRedisPasswordResetToken = (_id: string) => RedisController.getKey('Password-Reset-Token', _id);
-export const delRedisPasswordResetToken = (_id: string) => RedisController.delKey('Password-Reset-Token', _id);
+const filters = ['role', 'email'];
 
-// retrieve single user
-export const get = async ({ sub, args = {} }: any) => {
-  const user = await User.findOne({ _id: sub, ...args });
+const Paginator = (Modal: any, ...args: any) => Modal.paginate(...args);
 
-  if (user) setRedisUser(user);
+export const get = async (_id: string) => {
+  let user: UserIF, instance, cache;
+
+  cache = await RedisController.getUser(_id);
+
+  if (!cache) {
+    instance = await User.findOne({ _id });
+    if (!instance) throw { status: 404, message: 'USER NOT FOUND' };
+    user = instance.toJSON();
+    RedisController.setUser(_id, user);
+  } else user = JSON.parse(cache);
 
   return user;
 };
 
-// update self / admin can update specific user
-export const update = async ({ sub, args, isAdmin }: any) => {
-  let _id = args._id ? args._id : sub;
+export const list = async (query: any) => {
+  const payload = filterQuery(query, filters);
+  return Paginator(User, { ...payload.args }, { sort: { createdAt: -1 }, ...payload.query });
+};
 
-  if (!isAdmin) {
-    _id = sub; // owner
-    delete args['role'];
-    delete args['_id'];
+export const update = async (client: ClientIF, _id: string, payload: UserPayloadIF) => {
+  let instance;
+
+  if (client.role !== Role.ADMIN) {
+    delete payload['role'];
   }
-  return User.findOneAndUpdate({ _id }, args, { new: true });
+
+  if (client.sub === _id && payload.role) throw { status: 403, message: 'NOT ALLOWED TO CHANGE OWN ROLE' };
+
+  instance = await User.findOneAndUpdate({ _id }, payload, { new: true });
+  RedisController.delUser(_id);
+
+  return instance;
 };
 
-// user login
-export const login = async (args: any) => {
-  const user = await User.findOne(args);
+export const login = async (credentials: UserIF) => {
+  const { email, password } = credentials;
 
-  if (!user) throw { status: 401, message: 'Invalid Credentials' };
+  const user = await User.findOne({ $and: [{ email }, { password }] });
+
+  if (!user) throw { status: 401, message: 'INVALID CREDENTIALS' };
+
+  RedisController.setUser(user._id, user);
 
   const { role, _id } = user;
 
-  const access_token = lock({ role, sub: _id, type: 'access' });
-  const refresh_token = lock({ sub: _id, type: 'refresh' }, 60 * 48);
-
-  return { access_token, refresh_token };
-};
-
-// creates new accessToken for the user
-export const accessToken = async ({ sub, type }: any) => {
-  if (type !== 'refresh') throw { status: 401 };
-
-  const user = await User.findOne({ _id: sub });
-
-  if (!user) throw { status: 401 };
-
-  const { role, _id } = user;
-
-  const access_token = lock({ role, sub: _id });
+  const access_token = lock({ role, sub: _id }, 60 * 2); // expire in 2 hours
 
   return { access_token };
 };
 
-// user registration
-export const register = async (args: any) => {
+export const register = async (args: UserIF) => {
   const count = await User.countDocuments();
 
   if (count === 0) {
-    args.role = 'admin';
-  } else args.role = 'user';
+    args.role = Role.ADMIN;
+  } else args.role = Role.USER;
 
   const user = await User.create(args);
 
-  setRedisUser(user);
+  const code = randomUUID();
+  console.log('User Verificaton: ', { code, expire_in: 60 * 60 * 24 });
+  RedisController.setVerificationCode(user.email, code); // expire in 24 hour
 
   return user;
 };
 
-// issue password reset key
 export const forgot = async (email: string) => {
   const user = await User.findOne({ email });
 
   if (!user) throw { status: 404 };
 
-  const { _id, first_name, last_name } = user;
+  const { name } = user;
 
-  const token = lock({ email, sub: _id, type: 'reset' }, 60); // expires in 1 hr
+  const code = randomUUID();
 
-  console.log('Password Reset: ', {
-    reset_token: token,
-  });
+  console.log('Password Reset: ', { code, expire_in: 60 * 60 });
 
-  setRedisPasswordResetToken(_id, token);
+  RedisController.setResetCode(email, code); // expire in 1 hour
 
-  return { first_name, last_name };
+  return { name };
 };
 
-// reset password
-export const reset = async (token: string, password: string) => {
-  const { email, sub, type }: any = await verify(token);
+export const reset = async ({ code, email }: any, password: string) => {
+  const resetCode = await RedisController.getResetCode(email);
 
-  if (type !== 'reset' || !(await getRedisPasswordResetToken(sub))) throw { status: 401, message: 'The token is invalid or used already' };
+  if (code !== resetCode) throw { status: 401, message: 'CODE INVALID OR EXPIRED' };
 
   await User.findOneAndUpdate({ email }, { password });
 
-  delRedisPasswordResetToken(sub);
+  RedisController.delResetCode(email);
 
-  return { reset: 'Successfull' };
+  return { reset: 'YOUR PASSWORD HAS BEEN RESET SUCCESSFULLY' };
+};
+
+export const verification = async ({ code, email }: any) => {
+  const verifyCode = await RedisController.getVerificationCode(email);
+
+  if (code !== verifyCode) throw { status: 401, message: 'CODE INVALID OR EXPIRED' };
+
+  const user = await User.findOneAndUpdate({ email }, { verified_email: true }, { new: true });
+
+  RedisController.delVerificationCode(email);
+  RedisController.delUser(user?._id);
+
+  return { reset: 'YOUR ACCOUNT HAS BEEN VERIFIED SUCCESSFULLY' };
 };

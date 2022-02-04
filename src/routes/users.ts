@@ -11,22 +11,31 @@ const router = Router();
 
 router.get('/me', Auth.strict, async function (req: any, res: any, next) {
   try {
-    let user = await userController.getRedisUser(req.token.sub);
-
-    if (user) return res.reply({ data: JSON.parse(user) });
-
-    user = await userController.get({ sub: req.token.sub });
-
-    return res.reply({ data: user });
+    return res.reply({ data: await userController.get(req.client.sub) });
   } catch (err) {
     return next(err);
   }
 });
 
-// Update Self / User ( Admin Access )
-router.put('/', Auth.strict, validator.body(userValidation.update), async function (req: any, res: any, next) {
+router.get('/:id', Auth.isAdmin, async function (req: any, res: any, next) {
   try {
-    return res.reply({ data: await userController.update({ sub: req.token.sub, args: req.body, isAdmin: req.isAdmin }) });
+    return res.reply({ data: await userController.get(req.params.id) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.get('/', Auth.isAdmin, validator.query(userValidation.query), async function (req: any, res: any, next) {
+  try {
+    return res.reply({ data: await userController.list(req.query) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.put('/:id', Auth.strict, validator.body(userValidation.update), async function (req: any, res: any, next) {
+  try {
+    return res.reply({ data: await userController.update(req.client, req.params.id, req.body) });
   } catch (err) {
     return next(err);
   }
@@ -48,14 +57,6 @@ router.post('/login', validator.body(userValidation.login), async function (req,
   }
 });
 
-router.get('/access_token', Auth.locked, async function (req: any, res: any, next) {
-  try {
-    return res.reply({ data: await userController.accessToken(req.token) });
-  } catch (err) {
-    return next(err);
-  }
-});
-
 router.post('/forgot_password', validator.body(userValidation.forgot), async function (req: any, res: any, next) {
   try {
     return res.reply({ data: await userController.forgot(req.body.email) });
@@ -64,9 +65,17 @@ router.post('/forgot_password', validator.body(userValidation.forgot), async fun
   }
 });
 
-router.post('/reset/:reset_token', validator.body(userValidation.reset), async function (req: any, res: any, next) {
+router.post('/reset', validator.query(userValidation.resetQuery), validator.body(userValidation.reset), async function (req: any, res: any, next) {
   try {
-    return res.reply({ data: await userController.reset(req.params.reset_token, req.body.password) });
+    return res.reply({ data: await userController.reset(req.query, req.body.password) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.post('/verify', validator.query(userValidation.resetQuery), async function (req: any, res: any, next) {
+  try {
+    return res.reply({ data: await userController.verification(req.query) });
   } catch (err) {
     return next(err);
   }

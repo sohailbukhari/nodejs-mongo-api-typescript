@@ -37,7 +37,7 @@ app.use((err: any, req: any, res: any, next: any) => {
 
   const body = {
     message: err.message,
-    statusCode: err.status || 500,
+    statusCode: err.status || 400,
     data: err.hasOwnProperty('errors') ? err.errors : err.name === 'MongoError' ? err : err.error ? err.error.details : err.details,
   };
 

@@ -8,6 +8,7 @@ import keys from './src/config/keys';
 import logger from './src/utils/logger';
 
 import * as database from './src/config/db';
+import * as userSeeder from './src/seeder/user';
 
 const app = express();
 
@@ -18,6 +19,10 @@ export const init = async () => {
   } catch (err: any) {
     logger.error(JSON.stringify(err));
   }
+
+  // if (keys.dev) {
+  //   await userSeeder.init(100000);
+  // }
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
@@ -44,7 +49,7 @@ export const init = async () => {
 
     const body = {
       message: err.message,
-      statusCode: err.status || 500,
+      statusCode: err.status || 400,
       data: err.hasOwnProperty('errors') ? err.errors : err.name === 'MongoError' ? err : err.error ? err.error.details : err.details,
     };
 

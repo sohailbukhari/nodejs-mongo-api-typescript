@@ -12,12 +12,35 @@ const filters = ['role', 'email'];
 
 const Paginator = (Modal: any, ...args: any) => Modal.paginate(...args);
 
-export const report = async () => {
-  return User.aggregate([
+export const calculateReport = async () => {
+  let report;
+
+  report = await User.aggregate([
     {
       $group: { _id: '$role', count: { $sum: 1 } },
     },
   ]);
+  await RedisController.setUserReport(report);
+
+  return report;
+};
+
+export const report = async () => {
+  let report;
+
+  report = await RedisController.getUserReport();
+
+  if (!report) {
+    report = await calculateReport();
+  } else {
+    report = JSON.parse(report);
+  }
+
+  return report;
+};
+
+export const bulkCreate = async (user: any) => {
+  return User.create(user);
 };
 
 export const get = async (_id: string) => {
@@ -52,6 +75,9 @@ export const update = async (client: ClientIF, _id: string, payload: UserPayload
   instance = await User.findOneAndUpdate({ _id }, payload, { new: true });
   RedisController.delUser(_id);
 
+  // generate new report
+  if (payload.role && payload.role !== instance?.role) calculateReport();
+
   return instance;
 };
 
@@ -83,6 +109,7 @@ export const register = async (args: UserIF) => {
   const code = randomUUID();
   console.log('User Verificaton: ', { code, expire_in: 60 * 60 * 24 });
   RedisController.setVerificationCode(user.email, code); // expire in 24 hour
+  RedisController.delUserReport();
 
   return user;
 };

@@ -23,6 +23,11 @@ export const getUser = async (id: string) => getKey(USER, id);
 export const setUser = async (id: string, user: UserIF) => setKey(USER, id, JSON.stringify(user));
 export const delUser = async (id: string) => delKey(USER, id);
 
+const USER_REPORT = 'USER_REPORT';
+export const getUserReport = async () => RedisClient.get(USER_REPORT);
+export const setUserReport = async (data: any) => RedisClient.set(USER_REPORT, JSON.stringify(data)); // never expires stays in cache
+export const delUserReport = async () => RedisClient.del(USER_REPORT);
+
 const VERIFICATION = 'VERIFICATION';
 
 export const getVerificationCode = async (id: string) => getKey(VERIFICATION, id);

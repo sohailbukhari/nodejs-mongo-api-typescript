@@ -20,7 +20,7 @@ export interface UserIF {
   password: string;
   address: string;
   zip: number;
-  gender?: GenderType;
+  gender?: Gender;
   role: RoleType;
   verified_email: boolean;
 }

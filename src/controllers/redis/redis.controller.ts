@@ -3,16 +3,14 @@ import { RedisClient } from '../../config/db';
 
 import { UserIF } from 'src/types/UserIF';
 
-const { get, set, expire } = RedisClient;
-
 export const setKey = async (prefix: string, key: string, value: any, expireIn: number = 60) => {
   const pair = prefix + '-' + key;
-  await set(pair, value);
-  await expire(pair, expireIn);
+  await RedisClient.set(pair, value);
+  await RedisClient.expire(pair, expireIn);
 };
 
 export const getKey = async (prefix: string, key: string) => {
-  return get(prefix + '-' + key);
+  return await RedisClient.get(prefix + '-' + key);
 };
 
 export const delKey = async (prefix: string, key: string) => {

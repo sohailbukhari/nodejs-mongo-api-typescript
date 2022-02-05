@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import * as service from './app';
+import logger from './src/utils/logger';
 
 const app = service.default;
 
@@ -25,13 +26,16 @@ const onError = (error: any) => {
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
-      console.error(`${bind} requires elevated privileges`);
+      logger.error(`${bind} requires elevated privileges`);
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      console.error(`${bind} is already in use`);
+      logger.error(`${bind} is already in use`);
       process.exit(1);
       break;
+
+    case 'ECONNREFUSED':
+      logger.error(`Unable to Connect ${error.address} : ${error.port}`);
     default:
       throw error;
   }
@@ -41,7 +45,7 @@ const onError = (error: any) => {
   await service.init();
 
   app.listen(port, () => {
-    console.log(`Server app is running on port: ${port}...`);
+    logger.info(`Server running on http://localhost:${port}...`);
   });
 
   app.on('error', onError);

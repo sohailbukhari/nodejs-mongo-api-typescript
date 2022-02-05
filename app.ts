@@ -12,8 +12,12 @@ import * as database from './src/config/db';
 const app = express();
 
 export const init = async () => {
-  // cold start services first
-  await database.init();
+  try {
+    // cold start services first
+    await database.init();
+  } catch (err: any) {
+    logger.error(JSON.stringify(err));
+  }
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
@@ -32,7 +36,7 @@ export const init = async () => {
   app.use((err: any, req: any, res: any, next: any) => {
     // set locals, only providing error in development
     res.locals.message = err.message;
-    // res.locals.error = req.app.get("env") === "development" ? err : {};
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
 
     if (err.error || err.hasOwnProperty('errors') || err.name === 'MongoError') {
       err.status = 422;
@@ -40,7 +44,7 @@ export const init = async () => {
 
     const body = {
       message: err.message,
-      statusCode: err.status || 400,
+      statusCode: err.status || 500,
       data: err.hasOwnProperty('errors') ? err.errors : err.name === 'MongoError' ? err : err.error ? err.error.details : err.details,
     };
 

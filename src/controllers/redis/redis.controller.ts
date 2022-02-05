@@ -1,11 +1,9 @@
 import { promisify } from 'util';
-import RedisClient from '../../config/redis';
+import { RedisClient } from '../../config/db';
 
 import { UserIF } from 'src/types/UserIF';
 
-const set = promisify(RedisClient.set).bind(RedisClient);
-const get = promisify(RedisClient.get).bind(RedisClient);
-const expire = promisify(RedisClient.expire).bind(RedisClient);
+const { get, set, expire } = RedisClient;
 
 export const setKey = async (prefix: string, key: string, value: any, expireIn: number = 60) => {
   const pair = prefix + '-' + key;

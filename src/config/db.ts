@@ -1,11 +1,18 @@
 import mongoose from 'mongoose';
+import { createClient } from 'redis';
+
 import keys from './keys';
 
-(async () => {
-  try {
-    await mongoose.connect(keys.mongodb);
-    console.log('------------ Success: Mongodb ------------ ');
-  } catch (err) {}
-})();
+const message = (msg: string) => console.log(`------------ Success: ${msg} ------------`);
+
+export const RedisClient = createClient();
+
+export const init = async () => {
+  await mongoose.connect(keys.mongodb);
+  message('Mongodb');
+
+  await RedisClient.connect();
+  message('Redis');
+};
 
 export default mongoose.connection;

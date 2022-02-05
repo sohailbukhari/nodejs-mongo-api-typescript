@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
-import app from './app';
+import * as service from './app';
+
+const app = service.default;
 
 dotenv.config();
 
@@ -35,8 +37,12 @@ const onError = (error: any) => {
   }
 };
 
-app.listen(port, () => {
-  console.log(`Server app is running on port: ${port}...`);
-});
+(async () => {
+  await service.init();
 
-app.on('error', onError);
+  app.listen(port, () => {
+    console.log(`Server app is running on port: ${port}...`);
+  });
+
+  app.on('error', onError);
+})();

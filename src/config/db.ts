@@ -7,7 +7,7 @@ import keys from './keys';
 
 const message = (msg: string) => logger.info(`SUCCESS | ${msg} Service`);
 
-export const RedisClient = createClient();
+export const RedisClient = createClient({ url: keys.redis });
 
 export const init = async () => {
   await mongoose.connect(keys.mongodb);

@@ -7,5 +7,6 @@ if (process.env.NODE_ENV === 'production') {
 export default {
   dev: process.env.NODE_ENV !== 'production',
   secret: process.env.SECRET || 'sohxil@loop(^^4&d%#!@secret',
-  mongodb: process.env.DATABASE || 'mongodb://localhost:27017/cheggl',
+  mongodb: process.env.DATABASE || 'mongodb://localhost:27017/sienx',
+  redis: process.env.REDIS_URL || 'redis://localhost:6379/1',
 };

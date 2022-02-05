@@ -9,6 +9,14 @@ const validator = createValidator({ passError: true });
 
 const router = Router();
 
+router.get('/report', async function (req: any, res: any, next) {
+  try {
+    return res.reply({ data: await userController.report() });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 router.get('/me', Auth.strict, async function (req: any, res: any, next) {
   try {
     return res.reply({ data: await userController.get(req.client.sub) });

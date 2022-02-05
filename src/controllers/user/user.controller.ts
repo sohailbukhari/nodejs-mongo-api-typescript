@@ -12,6 +12,14 @@ const filters = ['role', 'email'];
 
 const Paginator = (Modal: any, ...args: any) => Modal.paginate(...args);
 
+export const report = async () => {
+  return User.aggregate([
+    {
+      $group: { _id: '$role', count: { $sum: 1 } },
+    },
+  ]);
+};
+
 export const get = async (_id: string) => {
   let user: UserIF, instance, cache;
 

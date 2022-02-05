@@ -10,7 +10,10 @@ export const register = Joi.object({
   name: Joi.string().required(),
   email: Joi.string().required(),
   password: Joi.string().required(),
-  phone: Joi.string().required(),
+  phone: Joi.string()
+    .regex(/^((\+92)?)(3)([0-9]{9})$/)
+    .message('valid pakistani number')
+    .required(),
   address: Joi.string().required(),
   zip: Joi.number().required(),
   gender: Joi.string()

@@ -45,7 +45,7 @@ const onError = (error: any) => {
   await service.init();
 
   app.listen(port, () => {
-    logger.info(`Server running on http://localhost:${port}...`);
+    logger.info(`Server running on http://localhost:${port}`);
   });
 
   app.on('error', onError);
